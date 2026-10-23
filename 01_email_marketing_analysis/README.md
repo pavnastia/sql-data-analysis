@@ -6,6 +6,16 @@ This project focuses on analyzing user account creation and email marketing acti
 
 The main goal was to calculate key metrics, evaluate email engagement, compare user activity across countries, and identify the top-performing markets.
 
+
+## Project Files
+
+- 📊 **[Looker Studio — Email Marketing Dashboard](https://datastudio.google.com/reporting/f59a9c39-e1f1-4ffb-bbe4-858511a1f7fc)**  
+  Interactive dashboard showing account creation, email engagement metrics, country rankings, and email activity trends.
+
+- 💻 **[SQL Query — BigQuery Analysis](email_marketing_analysis.sql)**  
+  SQL query used to prepare and aggregate the data.
+
+
 ## Tools Used
 
 - Google BigQuery
