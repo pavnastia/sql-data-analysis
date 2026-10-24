@@ -39,7 +39,7 @@ In addition to topic-based SQL queries, the repository includes analytical case 
 
 ### 1. Email Marketing & User Acquisition Analysis
 
-**[View Case Study](email_marketing_analysis)**
+**[View Case](email_marketing_analysis)**
 
 Analyzed user account creation and email marketing activity across different countries.
 
@@ -51,7 +51,7 @@ Analyzed user account creation and email marketing activity across different cou
 
 ### 2. Email Metrics Visualization
 
-**[View Case Study](email_metrics_visualization)**
+**[View Case](email_metrics_visualization)**
 
 Prepared an analytical dataset for visualizing e-commerce and email marketing performance.
 
@@ -64,7 +64,7 @@ Prepared an analytical dataset for visualizing e-commerce and email marketing pe
 
 ### 3. SQL Query Optimization
 
-**[View Case Study](sql_query_optimization)**
+**[View Case](sql_query_optimization)**
 
 Analyzed and improved SQL query execution performance in Google BigQuery.
 
@@ -102,4 +102,3 @@ Further validation is required to confirm that both query versions produce equiv
 
 This repository demonstrates the practical application of SQL for data exploration, transformation, and business analysis.
 
-It brings together SQL techniques, analytical problem-solving, and data visualization to demonstrate skills relevant to a **Data Analyst** role.
