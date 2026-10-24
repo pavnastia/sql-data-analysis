@@ -1,0 +1,83 @@
+-- ============================================================
+-- SQL Date & Time Functions
+-- Topics: DATE_ADD, TIMESTAMP_MICROS, EXTRACT,
+-- JOIN, UNION ALL, SUM, GROUP BY
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+-- 1. Email Activity Dates
+-- Calculate the dates when emails were sent, opened,
+-- and clicked using the account session date
+-- and the corresponding day offsets.
+
+SELECT
+    DATE_ADD(s.date, INTERVAL es.sent_date DAY) AS sent_date,
+    DATE_ADD(s.date, INTERVAL eo.open_date DAY) AS open_date,
+    DATE_ADD(s.date, INTERVAL ev.visit_date DAY) AS visit_date,
+    es.id_account,
+    es.id_message
+FROM `data-analytics-mate.DA.email_sent` AS es
+LEFT JOIN `data-analytics-mate.DA.email_open` AS eo
+    ON es.id_message = eo.id_message
+LEFT JOIN `data-analytics-mate.DA.email_visit` AS ev
+    ON es.id_message = ev.id_message
+LEFT JOIN `data-analytics-mate.DA.account_session` AS acs
+    ON acs.account_id = es.id_account
+JOIN `data-analytics-mate.DA.session` AS s
+    ON s.ga_session_id = acs.ga_session_id;
+
+
+-- 2. Extracting Date and Time Components
+-- Convert event timestamps from microseconds
+-- and extract individual date and time components.
+
+SELECT
+    event_timestamp,
+    TIMESTAMP_MICROS(event_timestamp) AS date,
+    EXTRACT(YEAR FROM TIMESTAMP_MICROS(event_timestamp)) AS year,
+    EXTRACT(MONTH FROM TIMESTAMP_MICROS(event_timestamp)) AS month,
+    EXTRACT(DAY FROM TIMESTAMP_MICROS(event_timestamp)) AS day,
+    EXTRACT(HOUR FROM TIMESTAMP_MICROS(event_timestamp)) AS hour,
+    EXTRACT(MINUTE FROM TIMESTAMP_MICROS(event_timestamp)) AS minute,
+    EXTRACT(SECOND FROM TIMESTAMP_MICROS(event_timestamp)) AS second
+FROM `data-analytics-mate.DA.event_params`;
+
+
+-- 3. Monthly Revenue and Advertising Costs
+-- Calculate monthly revenue from product orders
+-- and monthly paid search advertising costs.
+-- Combine both datasets using UNION ALL.
+
+SELECT
+    year,
+    month,
+    SUM(revenue) AS revenue,
+    SUM(cost) AS cost
+FROM (
+    -- Calculate monthly revenue
+    SELECT
+        EXTRACT(YEAR FROM s.date) AS year,
+        EXTRACT(MONTH FROM s.date) AS month,
+        SUM(p.price) AS revenue,
+        0 AS cost
+    FROM `data-analytics-mate.DA.session` AS s
+    JOIN `data-analytics-mate.DA.order` AS o
+        ON s.ga_session_id = o.ga_session_id
+    JOIN `data-analytics-mate.DA.product` AS p
+        ON p.item_id = o.item_id
+    GROUP BY year, month
+
+    UNION ALL
+
+    -- Calculate monthly paid search costs
+    SELECT
+        EXTRACT(YEAR FROM psc.date) AS year,
+        EXTRACT(MONTH FROM psc.date) AS month,
+        0 AS revenue,
+        SUM(psc.cost) AS cost
+    FROM `data-analytics-mate.DA.paid_search_cost` AS psc
+    GROUP BY year, month
+)
+GROUP BY year, month
+ORDER BY year, month;
