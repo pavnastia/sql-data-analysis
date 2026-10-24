@@ -27,11 +27,11 @@ The repository includes SQL queries organized by topic:
 | **[UNION](03_sql_union)** | Combining query results using UNION ALL |
 | **[Subqueries](04_sql_subqueries)** | Nested queries and conditional data filtering |
 | **[String Functions](05_sql_string_functions)** | Text manipulation and data transformation |
-| **[Date & Time Functions](06_sql_date_time_functions)** | Working with dates, timestamps, and time-based metrics |
+| **[Datetime Functions](06_sql_date_time_functions)** | Working with dates, timestamps, and time-based metrics |
 | **[Window Functions](07_sql_window_functions)** | Ranking, cumulative calculations, and analytical functions |
 | **[Common Table Expressions](08_sql_ctes)** | Structuring complex SQL queries using CTEs |
 | **[SQL Views](09_sql_views)** | Creating reusable database views |
-| **[UNNEST & Nested Data](10_sql_unnest)** | Working with nested and repeated fields in BigQuery |
+| **[Nested Fields](10_sql_unnest)** | Working with nested and repeated fields in BigQuery |
 
 ## Analytical Case Studies
 
