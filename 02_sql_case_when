@@ -1,0 +1,91 @@
+-- ============================================================
+-- SQL CASE WHEN & Conditional Aggregations
+-- Topics: CASE WHEN, COUNT, SUM, GROUP BY, NULLIF
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+-- 1. Emails Sent to Unsubscribed Accounts by Country
+-- Calculate the percentage of sent emails associated
+-- with unsubscribed accounts in each country.
+
+SELECT
+    sp.country,
+    COUNT(DISTINCT es.id_message) AS sent_cnt,
+    COUNT(DISTINCT CASE
+        WHEN ac.is_unsubscribed = 1 THEN es.id_message
+    END) / NULLIF(COUNT(DISTINCT es.id_message), 0) * 100
+        AS sent_cnt_unsub_percent
+FROM `data-analytics-mate.DA.session_params` AS sp
+LEFT JOIN `data-analytics-mate.DA.account_session` AS ass
+    ON ass.ga_session_id = sp.ga_session_id
+LEFT JOIN `data-analytics-mate.DA.email_sent` AS es
+    ON es.id_account = ass.account_id
+LEFT JOIN `data-analytics-mate.DA.account` AS ac
+    ON ac.id = es.id_account
+GROUP BY sp.country
+ORDER BY sent_cnt DESC;
+
+
+-- 2. Mobile Revenue Percentage by Continent
+-- Calculate total revenue and the percentage of revenue
+-- generated from mobile devices for each continent.
+
+SELECT
+    sp.continent,
+    SUM(p.price) AS revenue,
+    SUM(CASE
+        WHEN sp.device = 'mobile' THEN p.price
+    END) / SUM(p.price) * 100
+        AS revenue_from_mobile_percent
+FROM `data-analytics-mate.DA.order` AS o
+LEFT JOIN `data-analytics-mate.DA.session_params` AS sp
+    ON sp.ga_session_id = o.ga_session_id
+LEFT JOIN `data-analytics-mate.DA.product` AS p
+    ON p.item_id = o.item_id
+GROUP BY sp.continent
+ORDER BY revenue DESC;
+
+
+-- 3. Sessions with Missing Language by Browser
+-- Count sessions with missing language information
+-- and calculate their percentage for each browser.
+
+SELECT
+    browser,
+    COUNT(ga_session_id) AS session_cnt,
+    COUNT(CASE
+        WHEN language IS NULL THEN 1
+    END) AS session_cnt_with_empty_language,
+    COUNT(CASE
+        WHEN language IS NULL THEN 1
+    END) / COUNT(ga_session_id) * 100
+        AS session_cnt_with_empty_language_percent
+FROM `data-analytics-mate.DA.session_params`
+GROUP BY browser;
+
+
+-- 4. Bookcases Revenue Share by Continent
+-- Calculate total revenue, revenue from the
+-- Bookcases & Shelving Units category, and its
+-- percentage contribution to total revenue.
+
+SELECT
+    sp.continent,
+    SUM(p.price) AS revenue,
+    SUM(CASE
+        WHEN p.category = 'Bookcases & shelving units'
+        THEN p.price
+    END) AS revenue_from_bookcases,
+    SUM(CASE
+        WHEN p.category = 'Bookcases & shelving units'
+        THEN p.price
+    END) / SUM(p.price) * 100
+        AS revenue_from_bookcases_percent
+FROM `data-analytics-mate.DA.session_params` AS sp
+JOIN `data-analytics-mate.DA.order` AS o
+    ON sp.ga_session_id = o.ga_session_id
+JOIN `data-analytics-mate.DA.product` AS p
+    ON p.item_id = o.item_id
+GROUP BY sp.continent
+ORDER BY revenue DESC;
