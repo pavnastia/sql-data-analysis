@@ -1,0 +1,59 @@
+-- ============================================================
+-- SQL Subqueries & Data Filtering
+-- Topics: Subqueries, JOIN, IN, COUNT, GROUP BY, HAVING
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+-- 1. Sessions with More Than Two Events by Country
+-- Count unique sessions with more than two recorded events
+-- and group the results by country.
+
+SELECT
+    sp.country,
+    COUNT(DISTINCT sp.ga_session_id) AS session_cnt
+FROM `data-analytics-mate.DA.session_params` AS sp
+JOIN (
+    SELECT
+        ep.ga_session_id
+    FROM `data-analytics-mate.DA.event_params` AS ep
+    GROUP BY ep.ga_session_id
+    HAVING COUNT(*) > 2
+) AS eps
+    ON sp.ga_session_id = eps.ga_session_id
+GROUP BY sp.country;
+
+
+-- 2. Active Subscribers with More Than Two Email Visits
+-- Retrieve accounts with more than two recorded email
+-- visit events that are not marked as unsubscribed.
+
+SELECT
+    *
+FROM `data-analytics-mate.DA.account` AS ac
+WHERE ac.id IN (
+    SELECT
+        ev.id_account
+    FROM `data-analytics-mate.DA.email_visit` AS ev
+    GROUP BY ev.id_account
+    HAVING COUNT(*) > 2
+)
+AND ac.is_unsubscribed = 0;
+
+
+-- 3. User Engagement Events in Sessions with More Than Two Events
+-- Count user_engagement events in sessions containing
+-- more than two recorded events.
+
+SELECT
+    COUNT(ep1.ga_session_id) AS events_cnt
+FROM `data-analytics-mate.DA.event_params` AS ep1
+JOIN (
+    SELECT
+        ep.ga_session_id
+    FROM `data-analytics-mate.DA.event_params` AS ep
+    GROUP BY ep.ga_session_id
+    HAVING COUNT(*) > 2
+) AS eps
+    ON ep1.ga_session_id = eps.ga_session_id
+WHERE ep1.event_name = 'user_engagement';
