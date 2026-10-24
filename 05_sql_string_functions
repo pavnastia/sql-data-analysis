@@ -1,0 +1,51 @@
+-- ============================================================
+-- SQL String Functions & Text Manipulation
+-- Topics: STRPOS, REVERSE, RIGHT, REPLACE, LIKE, CASE WHEN
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+-- 1. Product Category Classification
+-- Classify product categories based on specific keywords
+-- and count the number of products in each group.
+
+SELECT
+    CASE
+        WHEN STRPOS(category, 'furniture') > 0 THEN 'furniture'
+        WHEN STRPOS(category, 'units') > 0 THEN 'units'
+        ELSE 'other'
+    END AS category,
+    COUNT(*) AS cnt
+FROM `data-analytics-mate.DA.product`
+GROUP BY category
+ORDER BY cnt DESC;
+
+
+-- 2. Extracting Product Dimensions from Descriptions
+-- Extract the text after the last 'x' in product descriptions
+-- containing both 'cm' and 'x'.
+
+SELECT
+    short_description,
+    CASE
+        WHEN STRPOS(short_description, 'cm') > 0
+             AND STRPOS(short_description, 'x') > 0
+        THEN RIGHT(
+            short_description,
+            STRPOS(REVERSE(short_description), 'x') - 1
+        )
+    END AS size
+FROM `data-analytics-mate.DA.product`;
+
+
+-- 3. English Language Variants by Session
+-- Extract language variants by removing the 'en-' prefix
+-- and count sessions for each variant.
+
+SELECT
+    REPLACE(language, 'en-', '') AS en_type,
+    COUNT(*) AS session_cnt
+FROM `data-analytics-mate.DA.session_params`
+WHERE language LIKE 'en-%'
+GROUP BY en_type
+ORDER BY session_cnt DESC;
