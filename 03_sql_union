@@ -1,0 +1,53 @@
+-- ============================================================
+-- SQL UNION & Combining Query Results
+-- Topics: UNION ALL, SELECT DISTINCT, JOIN, SUM, GROUP BY
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+-- 1. Combining Account and Order Sessions
+-- Combine session IDs associated with account creation
+-- and orders into a single dataset.
+-- Use event_type to identify the source of each record.
+-- UNION ALL preserves records from both datasets.
+
+SELECT DISTINCT
+    ga_session_id,
+    'account' AS event_type
+FROM `data-analytics-mate.DA.account_session`
+
+UNION ALL
+
+SELECT DISTINCT
+    ga_session_id,
+    'order' AS event_type
+FROM `data-analytics-mate.DA.order`;
+
+
+-- 2. Combining Revenue and Advertising Costs by Date
+-- Calculate daily revenue from product orders
+-- and daily paid search advertising costs.
+-- Combine both metrics into a single dataset using UNION ALL.
+-- The type column distinguishes revenue from cost.
+
+SELECT
+    s.date,
+    'revenue' AS type,
+    SUM(p.price) AS value
+FROM `data-analytics-mate.DA.session` AS s
+JOIN `data-analytics-mate.DA.order` AS o
+    ON s.ga_session_id = o.ga_session_id
+JOIN `data-analytics-mate.DA.product` AS p
+    ON p.item_id = o.item_id
+GROUP BY s.date
+
+UNION ALL
+
+SELECT
+    psc.date,
+    'cost' AS type,
+    SUM(psc.cost) AS value
+FROM `data-analytics-mate.DA.paid_search_cost` AS psc
+GROUP BY psc.date
+
+ORDER BY date;
