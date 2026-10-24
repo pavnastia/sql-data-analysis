@@ -1,0 +1,122 @@
+-- ============================================================
+-- SQL Views
+-- Topics: CREATE VIEW, CTEs, JOIN, UNION ALL,
+-- Window Functions, SUM, COUNT, GROUP BY
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+
+-- 1. Revenue Analysis Using a SQL View
+
+
+-- Step 1: Create a view combining predicted and actual revenue
+
+CREATE OR REPLACE VIEW `Students.v_PavlenkoA_view_task` AS
+
+SELECT
+    date,
+    predict,
+    0 AS revenue
+FROM `data-analytics-mate.DA.revenue_predict`
+
+UNION ALL
+
+SELECT
+    s.date,
+    0 AS predict,
+    SUM(p.price) AS revenue
+FROM `data-analytics-mate.DA.session` AS s
+JOIN `data-analytics-mate.DA.order` AS o
+    ON s.ga_session_id = o.ga_session_id
+JOIN `data-analytics-mate.DA.product` AS p
+    ON p.item_id = o.item_id
+GROUP BY s.date;
+
+
+-- Step 2: Use the view to calculate cumulative
+-- actual revenue as a percentage of predicted revenue
+
+WITH revenue_predict_by_day AS (
+    SELECT
+        date,
+        SUM(predict) AS predict,
+        SUM(revenue) AS revenue
+    FROM `Students.v_PavlenkoA_view_task`
+    GROUP BY date
+)
+
+SELECT
+    date,
+    ROUND(
+        SAFE_DIVIDE(
+            SUM(revenue) OVER (ORDER BY date),
+            SUM(predict) OVER (ORDER BY date)
+        ) * 100,
+        2
+    ) AS cum_percent
+FROM revenue_predict_by_day
+ORDER BY date;
+
+
+
+-- 2. Monthly Email Activity Using a SQL View
+
+
+-- Step 1: Create a view with monthly email activity metrics
+
+CREATE OR REPLACE VIEW `Students.Pavlenko_Aggregation_Data` AS
+
+WITH email_sent_dates AS (
+    -- Calculate email sending dates
+    SELECT
+        es.id_account,
+        es.id_message,
+        DATE_ADD(
+            s.date,
+            INTERVAL es.sent_date DAY
+        ) AS all_date
+    FROM `data-analytics-mate.DA.email_sent` AS es
+    JOIN `data-analytics-mate.DA.account_session` AS ac
+        ON ac.account_id = es.id_account
+    JOIN `data-analytics-mate.DA.session` AS s
+        ON s.ga_session_id = ac.ga_session_id
+)
+
+SELECT DISTINCT
+    DATE_TRUNC(all_date, MONTH) AS sent_month,
+    id_account,
+
+    ROUND(
+        SAFE_DIVIDE(
+            COUNT(id_message) OVER (
+                PARTITION BY DATE_TRUNC(all_date, MONTH), id_account
+            ),
+            COUNT(id_message) OVER (
+                PARTITION BY DATE_TRUNC(all_date, MONTH)
+            )
+        ) * 100,
+        2
+    ) AS sent_msg_percent_from_this_month,
+
+    MIN(all_date) OVER (
+        PARTITION BY DATE_TRUNC(all_date, MONTH), id_account
+    ) AS first_sent_date,
+
+    MAX(all_date) OVER (
+        PARTITION BY DATE_TRUNC(all_date, MONTH), id_account
+    ) AS last_sent_date
+
+FROM email_sent_dates;
+
+
+-- Step 2: Retrieve monthly email metrics from the view
+
+SELECT
+    sent_month,
+    id_account,
+    sent_msg_percent_from_this_month,
+    first_sent_date,
+    last_sent_date
+FROM `Students.Pavlenko_Aggregation_Data`
+ORDER BY sent_month, id_account;
