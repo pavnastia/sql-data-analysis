@@ -1,0 +1,128 @@
+-- ============================================================
+-- SQL Joins & Aggregations
+-- Topics: JOIN, COUNT, SUM, AVG, GROUP BY, ORDER BY
+-- Dataset: E-commerce (Google BigQuery)
+-- ============================================================
+
+
+-- 1. Session Distribution by Browser
+-- Count the number of sessions for each browser.
+
+SELECT
+    browser,
+    COUNT(*) AS session_cnt
+FROM `data-analytics-mate.DA.session_params`
+GROUP BY browser
+ORDER BY session_cnt DESC;
+
+
+-- 2. Order Conversion Rate by Country
+-- Calculate the percentage of sessions resulting in orders
+-- for each country.
+
+SELECT
+    sp.country,
+    COUNT(DISTINCT o.ga_session_id) AS sessions_with_orders,
+    COUNT(DISTINCT sp.ga_session_id) AS session_cnt,
+    ROUND(
+        SAFE_DIVIDE(
+            COUNT(DISTINCT o.ga_session_id),
+            COUNT(DISTINCT sp.ga_session_id)
+        ) * 100,
+        2
+    ) AS session_with_orders_percent
+FROM `data-analytics-mate.DA.session_params` AS sp
+LEFT JOIN `data-analytics-mate.DA.order` AS o
+    ON o.ga_session_id = sp.ga_session_id
+GROUP BY sp.country
+ORDER BY session_cnt DESC;
+
+
+-- 3. Scroll Event Sessions in the United Kingdom
+-- Count unique account-linked sessions with a scroll event.
+
+SELECT
+    COUNT(DISTINCT acs.ga_session_id) AS session_cnt
+FROM `data-analytics-mate.DA.session_params` AS sp
+LEFT JOIN `data-analytics-mate.DA.event_params` AS ep
+    ON ep.ga_session_id = sp.ga_session_id
+LEFT JOIN `data-analytics-mate.DA.account_session` AS acs
+    ON acs.ga_session_id = sp.ga_session_id
+WHERE sp.country = 'United Kingdom'
+    AND ep.event_name = 'scroll';
+
+
+-- 4. Email Open Rate by Letter Type in the United States
+-- Identify the email type with the highest open rate.
+
+SELECT
+    es.letter_type,
+    COUNT(DISTINCT es.id_message) AS email_sent_cnt,
+    COUNT(DISTINCT eo.id_message) AS email_open_cnt,
+    ROUND(
+        SAFE_DIVIDE(
+            COUNT(DISTINCT eo.id_message),
+            COUNT(DISTINCT es.id_message)
+        ) * 100,
+        2
+    ) AS open_rate
+FROM `data-analytics-mate.DA.email_sent` AS es
+LEFT JOIN `data-analytics-mate.DA.email_open` AS eo
+    ON eo.id_message = es.id_message
+    AND eo.id_account = es.id_account
+LEFT JOIN `data-analytics-mate.DA.account_session` AS acs
+    ON es.id_account = acs.account_id
+LEFT JOIN `data-analytics-mate.DA.session_params` AS sp
+    ON sp.ga_session_id = acs.ga_session_id
+WHERE sp.country = 'United States'
+GROUP BY es.letter_type
+ORDER BY open_rate DESC
+LIMIT 1;
+
+
+-- 5. Emails Sent to Unsubscribed Accounts by Country
+-- Count unique emails sent to accounts marked as unsubscribed.
+
+SELECT
+    sp.country,
+    COUNT(DISTINCT es.id_message) AS sent_cnt
+FROM `data-analytics-mate.DA.session_params` AS sp
+LEFT JOIN `data-analytics-mate.DA.account_session` AS acs
+    ON acs.ga_session_id = sp.ga_session_id
+LEFT JOIN `data-analytics-mate.DA.email_sent` AS es
+    ON es.id_account = acs.account_id
+LEFT JOIN `data-analytics-mate.DA.account` AS a
+    ON a.id = acs.account_id
+WHERE a.is_unsubscribed = 1
+GROUP BY sp.country
+ORDER BY sent_cnt DESC;
+
+
+-- 6. Average Product Price by Category
+-- Calculate the average product price for each category.
+
+SELECT
+    category,
+    ROUND(AVG(price), 2) AS average_price
+FROM `data-analytics-mate.DA.product`
+GROUP BY category
+ORDER BY average_price DESC;
+
+
+-- 7. Revenue and Orders by Country
+-- Analyze revenue and order volume for the Beds category
+-- across European countries.
+
+SELECT
+    sp.country,
+    ROUND(SUM(p.price), 2) AS revenue,
+    COUNT(o.ga_session_id) AS count_of_orders
+FROM `data-analytics-mate.DA.session_params` AS sp
+LEFT JOIN `data-analytics-mate.DA.order` AS o
+    ON sp.ga_session_id = o.ga_session_id
+LEFT JOIN `data-analytics-mate.DA.product` AS p
+    ON p.item_id = o.item_id
+WHERE sp.continent = 'Europe'
+    AND p.category = 'Beds'
+GROUP BY sp.country
+ORDER BY count_of_orders DESC;
